@@ -36,8 +36,15 @@ func withoutConcurrentPipeline() {
 
 }
 
+func withConcurrentPipeline() {
+}
+
 func main() {
 	nowTime := time.Now()
 	withoutConcurrentPipeline()
 	fmt.Printf("Without concurrent done in %s\n", time.Since(nowTime))
+
+	nowTime = time.Now()
+	withConcurrentPipeline()
+	fmt.Printf("   With concurrent done in %s\n", time.Since(nowTime))
 }
