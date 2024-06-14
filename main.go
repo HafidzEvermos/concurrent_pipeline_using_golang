@@ -37,6 +37,48 @@ func withoutConcurrentPipeline() {
 }
 
 func withConcurrentPipeline() {
+	var (
+		imageChan           = make(chan Job)
+		resizedImageChan    = make(chan Job)
+		greyscaledImageChan = make(chan Job)
+	)
+
+	go func() {
+		for _, p := range imagePaths {
+			image := imageprocessing.ReadImage(p)
+			imageChan <- Job{
+				Image:   image,
+				OutPath: "concurrent_output/" + p,
+			}
+		}
+		close(imageChan)
+	}()
+
+	go func() {
+		for image := range imageChan {
+			resizedImage := imageprocessing.Resize(image.Image)
+			resizedImageChan <- Job{
+				Image:   resizedImage,
+				OutPath: image.OutPath,
+			}
+		}
+		close(resizedImageChan)
+	}()
+
+	go func() {
+		for image := range resizedImageChan {
+			greyscaledImage := imageprocessing.Grayscale(image.Image)
+			greyscaledImageChan <- Job{
+				Image:   greyscaledImage,
+				OutPath: image.OutPath,
+			}
+		}
+		close(greyscaledImageChan)
+	}()
+
+	for image := range greyscaledImageChan {
+		imageprocessing.WriteImage(image.OutPath, image.Image)
+	}
 }
 
 func main() {
